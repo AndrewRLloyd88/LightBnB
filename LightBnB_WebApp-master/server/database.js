@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('dotenv').config();
 const properties = require('./json/properties.json');
 const users = require('./json/users.json');
 
@@ -16,7 +16,7 @@ const client = new Client(config);
 
 //same as app.listen
 client.connect(() => {
-  console.log("connected to the db")
+  console.log("connected to the db");
   ///connected to the db is the ideal situation
 });
 
@@ -28,17 +28,37 @@ client.connect(() => {
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function(email) {
-  let user;
-  for (const userId in users) {
-    user = users[userId];
-    if (user.email.toLowerCase() === email.toLowerCase()) {
-      break;
-    } else {
-      user = null;
-    }
-  }
-  return Promise.resolve(user);
-}
+  let userWithEmailQuery = "SELECT * ";
+  userWithEmailQuery += "FROM users ";
+  userWithEmailQuery += "WHERE email = $1;";
+
+  return client.query(userWithEmailQuery, [email])
+    .then(res => {
+      if (res.rows) {
+        //testing our output
+        // console.log(res.rows)
+        return res.rows[0];
+      } else {
+        return null;
+      }
+    })
+    .catch(err => {
+      console.log('query error:', err);
+    });
+
+
+
+  // let user;
+  // for (const userId in users) {
+  //   user = users[userId];
+  //   if (user.email.toLowerCase() === email.toLowerCase()) {
+  //     break;
+  //   } else {
+  //     user = null;
+  //   }
+  // }
+  // return Promise.resolve(user);
+};
 exports.getUserWithEmail = getUserWithEmail;
 
 /**
@@ -47,8 +67,25 @@ exports.getUserWithEmail = getUserWithEmail;
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function(id) {
-  return Promise.resolve(users[id]);
-}
+  let userWithIdQuery = "SELECT * ";
+  userWithIdQuery += "FROM users ";
+  userWithIdQuery += "WHERE id = $1;";
+
+  return client.query(userWithIdQuery, [id])
+    .then(res => {
+      if (res.rows) {
+        //testing our output
+        // console.log(res.rows)
+        return res.rows[0];
+      } else {
+        return null;
+      }
+    })
+    .catch(err => {
+      console.log('query error:', err);
+    });
+  // return Promise.resolve(users[id]);
+};
 exports.getUserWithId = getUserWithId;
 
 
@@ -57,12 +94,23 @@ exports.getUserWithId = getUserWithId;
  * @param {{name: string, password: string, email: string}} user
  * @return {Promise<{}>} A promise to the user.
  */
-const addUser =  function(user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
-}
+const addUser = function(user) {
+  let addUserQuery = " INSERT INTO users (name, email, password)";
+  addUserQuery += " VALUES ($1, $2, $3)";
+  addUserQuery += " RETURNING *;";
+  const userInfo = [user.name, user.email, user.password];
+  return client.query(addUserQuery, userInfo)
+    .then(res => {
+      return res.rows[0];
+    })
+    .catch(err => {
+      return console.log('query error:', err);
+    });
+  // const userId = Object.keys(users).length + 1;
+  // user.id = userId;
+  // users[userId] = user;
+  // return Promise.resolve(user);
+};
 exports.addUser = addUser;
 
 /// Reservations
@@ -74,7 +122,7 @@ exports.addUser = addUser;
  */
 const getAllReservations = function(guest_id, limit = 10) {
   return getAllProperties(null, 2);
-}
+};
 exports.getAllReservations = getAllReservations;
 
 /// Properties
@@ -86,13 +134,13 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit = 10) {
-  propQuery = 'Select * '
-  propQuery += 'FROM properties'
-  propQuery += ' LIMIT $1'
-  console.log(propQuery)
+  let propQuery = 'Select * ';
+  propQuery += 'FROM properties';
+  propQuery += ' LIMIT $1';
+  console.log(propQuery);
   return client.query(propQuery, [limit])
-  .then(res => res.rows).catch(err => console.log(err));
-}
+    .then(res => res.rows).catch(err => console.log(err));
+};
 
 
 exports.getAllProperties = getAllProperties;
@@ -108,5 +156,5 @@ const addProperty = function(property) {
   property.id = propertyId;
   properties[propertyId] = property;
   return Promise.resolve(property);
-}
+};
 exports.addProperty = addProperty;
