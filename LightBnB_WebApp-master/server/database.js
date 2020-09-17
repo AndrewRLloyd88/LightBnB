@@ -205,7 +205,7 @@ const getAllProperties = function (options, limit = 10) {
     console.log(queryParams)
     
     // 6. Add any query that comes after the WHERE clause.
-    propQuery.push(' AND properties.cost_per_night > $2 AND properties.cost_per_night < $3 ')
+    propQuery.push(' WHERE properties.cost_per_night > $2 AND properties.cost_per_night < $3 ')
   }
 
     //if rating is only filled in
@@ -268,9 +268,49 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function (property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
+
+  let addPropertyString = "INSERT INTO properties " 
+  addPropertyString += "("
+  addPropertyString += "owner_id, "
+  addPropertyString += "title, "
+  addPropertyString += "description, "
+  addPropertyString += "thumbnail_photo_url, "
+  addPropertyString += "cover_photo_url, "
+  addPropertyString += "cost_per_night, "
+  addPropertyString += "parking_spaces, "
+  addPropertyString += "number_of_bathrooms, "
+  addPropertyString += "number_of_bedrooms, "
+  addPropertyString += "country, "
+  addPropertyString += "street, "
+  addPropertyString += "city, " 
+  addPropertyString += "province, "
+  addPropertyString += "post_code "
+  addPropertyString += ")"
+  addPropertyString += " VALUES " 
+  addPropertyString += "("
+  addPropertyString += "$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14"
+  addPropertyString += ")"
+  addPropertyString += " RETURNING *;"
+  
+  const queryParams = [property.owner_id, property.title, property.description, property.thumbnail_photo_url, property.cover_photo_url, property.cost_per_night * 100, property.parking_spaces, property.number_of_bathrooms, property.number_of_bedrooms, property.country, property.street, property.city, property.province, property.post_code];
+  
+  return client.query(addPropertyString, queryParams)
+    .then(res => {
+      return res.rows[0];
+    })
+    .catch(err => {
+      return console.log('query error:', err);
+    })
+
+
+
+
+
+
+
+  // const propertyId = Object.keys(properties).length + 1;
+  // property.id = propertyId;
+  // properties[propertyId] = property;
+  // return Promise.resolve(property);
 };
 exports.addProperty = addProperty;
